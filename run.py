@@ -9,7 +9,6 @@ def solve(lines: list[str]) -> int:
     for line in lines:
         if line.strip():  # Пропускаем пустые строки
             clean_lines.append(line.rstrip())
-    print(clean_lines)
     depth = len(clean_lines) - 3
     corridor = ['.'] * 11
 
