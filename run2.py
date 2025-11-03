@@ -68,7 +68,6 @@ def solve(edges: list[tuple[str, str]]) -> list[str]:
                 if neighbor not in prev:
                     prev[neighbor] = current
                     queue.append(neighbor)
-        print('PREV', prev)
 
         path = []
         current = virus_pos
