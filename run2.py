@@ -27,7 +27,6 @@ def solve(edges: list[tuple[str, str]]) -> list[str]:
 
     # текущая точка вируса
     virus_pos = 'a'
-
     result = []
 
     for _ in range(len(edges)):
