@@ -32,7 +32,6 @@ def solve(edges: list[tuple[str, str]]) -> list[str]:
 
     for _ in range(len(edges)):
         # BFS для поиска расстояний до всех шлюзов
-        queue = deque([virus_pos])
         distances = {virus_pos: 0}
         queue = deque([virus_pos])
 
