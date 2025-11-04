@@ -13,7 +13,6 @@ def solve(edges: list[tuple[str, str]]) -> list[str]:
         список отключаемых коридоров в формате "Шлюз-узел"
 
     """
-    print('полученные данные', edges)
     graph = defaultdict(list)
 
     # строим граф
@@ -42,7 +41,6 @@ def solve(edges: list[tuple[str, str]]) -> list[str]:
                 if neighbor not in distances:
                     distances[neighbor] = distances[current] + 1
                     queue.append(neighbor)
-            print('puppuu', queue)
 
         # Выбираем ближайший шлюз (по расстоянию, затем лексикографически)
         candidate_gates = []
