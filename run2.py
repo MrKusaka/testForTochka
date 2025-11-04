@@ -23,7 +23,7 @@ def solve(edges: list[tuple[str, str]]) -> list[str]:
     result = []
 
     for _ in range(len(edges)):
-        # BFS для поиска расстояний до всех узлов
+        # Выбор целевого шлюза
         distances = {virus_pos: 0}
         queue = deque([virus_pos])
 
@@ -46,57 +46,70 @@ def solve(edges: list[tuple[str, str]]) -> list[str]:
         min_dist = min(dist for dist, _ in candidate_gates)
         target_gate = min(gate for dist, gate in candidate_gates if dist == min_dist)
 
-        # Находим следующий узел на пути к target_gate
-        # BFS от target_gate назад
-        prev = {target_gate: None}
-        queue = deque([target_gate])
+        # Находим ВСЕ соседи virus_pos, которые ведут к target_gate по кратчайшему пути
+        candidate_next_nodes = []
 
-        while queue:
-            current = queue.popleft()
-            for neighbor in graph[current]:
-                if neighbor not in prev:
-                    prev[neighbor] = current
-                    queue.append(neighbor)
+        for neighbor in graph[virus_pos]:
+            # Запускаем BFS из neighbor чтобы проверить, ведет ли он к target_gate
+            neighbor_distances = {neighbor: 0}
+            n_queue = deque([neighbor])
+            found = False
 
-        # Восстанавливаем путь от вируса к шлюзу
-        path = []
-        current = virus_pos
-        while current != target_gate:
-            path.append(current)
-            current = prev[current]
-        path.append(target_gate)
+            while n_queue:
+                current_node = n_queue.popleft()
+                if current_node == target_gate:
+                    found = True
+                    break
+                for nbr in graph[current_node]:
+                    if nbr not in neighbor_distances:
+                        neighbor_distances[nbr] = neighbor_distances[current_node] + 1
+                        n_queue.append(nbr)
 
-        next_node = path[1]  # Следующий узел
+            # Если через neighbor можно дойти до target_gate за (min_dist - 1) шагов
+            if found and neighbor_distances.get(target_gate, float('inf')) == min_dist - 1:
+                candidate_next_nodes.append(neighbor)
 
-        # Блокируем связь next_node с тем шлюзом, который будет ближайшим ИЗ next_node
-        next_distances = {next_node: 0}
-        next_queue = deque([next_node])
-
-        while next_queue:
-            current = next_queue.popleft()
-            for neighbor in graph[current]:
-                if neighbor not in next_distances:
-                    next_distances[neighbor] = next_distances[current] + 1
-                    next_queue.append(neighbor)
-
-        # Находим ближайший шлюз из next_node
-        threat_gates = []
-        for gate in gates:
-            if gate in next_distances:
-                threat_gates.append((next_distances[gate], gate))
-
-        if not threat_gates:
+        if not candidate_next_nodes:
             break
 
-        threat_min_dist = min(dist for dist, _ in threat_gates)
-        threat_gate = min(gate for dist, gate in threat_gates if dist == threat_min_dist)
+        # Выбираем лексикографически наименьший узел
+        next_node = min(candidate_next_nodes)
 
-        # ВАЖНО: Проверяем, существует ли связь между threat_gate и next_node
-        # Если нет, ищем другую связь threat_gate
-        if next_node in graph[threat_gate]:
-            link_to_cut = f"{threat_gate}-{next_node}"
+        # Находим все шлюзы, соединенные с next_node (непосредственные угрозы)
+        immediate_threats = []
+        for neighbor in graph[next_node]:
+            if neighbor in gates:
+                immediate_threats.append(f"{neighbor}-{next_node}")
+
+        if immediate_threats:
+            # Блокируем лексикографически наименьшую непосредственную угрозу
+            link_to_cut = min(immediate_threats)
         else:
-            # Ищем любую существующую связь threat_gate
+            # Если нет непосредственных угроз, находим ближайший шлюз из next_node
+            next_distances = {next_node: 0}
+            next_queue = deque([next_node])
+
+            while next_queue:
+                current = next_queue.popleft()
+                for neighbor in graph[current]:
+                    if neighbor not in next_distances:
+                        next_distances[neighbor] = next_distances[current] + 1
+                        next_queue.append(neighbor)
+
+            # Находим ближайший шлюз из next_node
+            threat_gates = []
+            for gate in gates:
+                if gate in next_distances:
+                    threat_gates.append((next_distances[gate], gate))
+
+            if not threat_gates:
+                break
+
+            threat_min_dist = min(dist for dist, _ in threat_gates)
+            threat_gate_candidates = [gate for dist, gate in threat_gates if dist == threat_min_dist]
+            threat_gate = min(threat_gate_candidates)
+
+            # Блокируем лексикографически наименьшую связь threat_gate
             available_links = [f"{threat_gate}-{node}" for node in graph[threat_gate]]
             if not available_links:
                 break
@@ -104,7 +117,7 @@ def solve(edges: list[tuple[str, str]]) -> list[str]:
 
         result.append(link_to_cut)
 
-        # Удаляем связь из графа (теперь безопасно)
+        # Удаляем связь из графа
         gate_part, node_part = link_to_cut.split('-')
         if node_part in graph[gate_part]:
             graph[gate_part].remove(node_part)
